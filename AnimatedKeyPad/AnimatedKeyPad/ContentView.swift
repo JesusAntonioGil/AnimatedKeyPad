@@ -26,15 +26,45 @@ struct KeyPadValue {
         
         stringValue.append(String(number))
         stackViews.append(.init(value: String(number)))
+        
+        updateCommas()
     }
     
     mutating func removeLast() {
-        guard !stringValue.isEmpty else {
-            return
-        }
+        guard !stringValue.isEmpty else { return }
         
         stringValue.removeLast()
         stackViews.removeLast()
+        
+        updateCommas()
+    }
+    
+    mutating func updateCommas() {
+        guard let number = Int(stringValue) else { return }
+        
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.locale = Locale(identifier: localeFormat)
+        
+        if let formattedNumber = formatter.string(from: .init(value: number)) {
+            stackViews.removeAll(where: \.isComma)
+            
+            let stackWithCommas = formattedNumber.compactMap {
+                let value = String($0)
+                return Number(value: value, isComma: value == ",")
+            }
+            
+            let onlyCommaArray = stackWithCommas.filter(\.isComma)
+            
+            for index in stackWithCommas.indices {
+                let number = stackWithCommas[index]
+                let commaIndex = onlyCommaArray.firstIndex(where: { $0.id == number.id }) ?? 0
+                
+                if number.isComma {
+                    stackViews.insert(.init(value: ",", isComma: true, commaID: commaIndex), at: index)
+                }
+            }
+        }
     }
     
     var isEmpty: Bool {
